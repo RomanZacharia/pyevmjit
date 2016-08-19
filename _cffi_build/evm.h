@@ -135,19 +135,6 @@ typedef union evm_variant (*evm_query_fn)(struct evm_env* env,
                                           enum evm_query_key key,
 
                                          union evm_variant arg);
-
-// This additional layer added because the cffi does not support returning unions
-// by value (only ptr allowed. The return value moved to argument list so that
-// te caller takes care of moth mem allocation and release.
-/*extern "Python" void  evm_query(struct evm_env* env,
-                                          enum evm_query_key key,
-                                          union evm_variant* arg,
-                                          union evm_variant* ret);*/
-
-typedef void  (*evm_query_ptr)(struct evm_env* env,
-                                          enum evm_query_key key,
-                                          union evm_variant* arg,
-                                          union evm_variant* ret);
 /// The update callback key.
 enum evm_update_key {
     EVM_SSTORE = 0,        ///< Update storage entry
@@ -213,18 +200,6 @@ typedef int64_t (*evm_call_fn)(
     uint8_t* output,
     size_t output_size);
 
-/*extern "Python" int64_t evm_call(
-    struct evm_env* env,
-    enum evm_call_kind kind,
-    int64_t gas,
-    struct evm_hash160 address,
-    struct evm_uint256 value,
-    uint8_t const* input,
-    size_t input_size,
-    uint8_t* output,
-    size_t output_size);*/
-
-
 /// A piece of information about the EVM implementation.
 enum evm_info_key {
     EVM_NAME  = 0,   ///< The name of the EVM implementation. ASCII encoded.
@@ -255,7 +230,7 @@ struct evm_instance* evm_create(evm_query_fn query_fn,
                                        evm_update_fn update_fn,
                                        evm_call_fn call_fn);
 
-struct evm_instance* evm_create_wr(evm_query_ptr eq, evm_update_ptr eu, evm_call_fn ec);
+// struct evm_instance* evm_create_wr(evm_query_ptr eq, evm_update_ptr eu, evm_call_fn ec);
 
 /// Destroys the EVM instance.
 ///
@@ -333,4 +308,3 @@ void evmjit_compile(struct evm_instance* instance, enum evm_mode mode,
                            struct evm_hash256 code_hash);
 
 /// @}
-
