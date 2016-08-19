@@ -21,12 +21,12 @@ struct evm_hash160 {
 /// 32 bytes of data. For EVM that means big-endian 256-bit integer. Values of
 /// this type are converted to host-endian values inside EVM.
 struct evm_hash256 {
-//    union {
+   union {
         /// The 32 bytes of the integer/hash. Memory aligned to 8 bytes.
-//        uint8_t bytes[32];
+        uint8_t bytes[32];
         /// Additional access by uint64 words to enforce 8 bytes alignment.
         uint64_t words[4];
-//    };
+   };
 };
 
 
@@ -149,16 +149,6 @@ typedef void (*evm_update_fn)(struct evm_env* env,
                               enum evm_update_key key,
                               union evm_variant arg1,
                               union evm_variant arg2);
-
-/*extern "Python" void evm_update(struct evm_env* env,
-                              enum evm_update_key key,
-                              union evm_variant* arg1,
-                              union evm_variant* arg2);*/
-
-typedef void (*evm_update_ptr)(struct evm_env* env,
-                              enum evm_update_key key,
-                              union evm_variant* arg1,
-                              union evm_variant* arg2);
 
 /// The kind of call-like instruction.
 enum evm_call_kind {

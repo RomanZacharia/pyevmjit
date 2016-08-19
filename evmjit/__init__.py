@@ -58,7 +58,7 @@ def evm_query(env, key, arg):
                 key == evm_query_key.EVM_CALLER or\
                 key == evm_query_key.EVM_ORIGIN or\
                 key == evm_query_key.EVM_COINBASE:
-            ret[0].address.bytes = variant
+            return {'address': ['TODO']}
 
         if key == evm_query_key.EVM_GAS_LIMIT or\
                 key == evm_query_key.EVM_NUMBER or\
@@ -69,14 +69,15 @@ def evm_query(env, key, arg):
             ret[0].data = ffi.new("uint8_t[]", variant)
             ret[0].data_size = len(variant)
 
-    else:
-        ret[0].uint256 = [[0, 0, 0, 0]]
-
 
 @ffi.def_extern()
 def evm_update(env, key, arg1, arg2):
     global evm_update_cb
     if evm_update_cb:
+        env = ffi.from_handle(ffi.cast('void*', env))
+        if key == lib.EVM_SSTORE:
+            arg1 = from_uint256(arg1.uint256)
+            arg2 = from_uint256(arg2.uint256)
         evm_update_cb(env, key, arg1, arg2)
 
 

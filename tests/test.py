@@ -1,3 +1,4 @@
+import hashlib
 from evmjit import EVMJIT, evm_mode
 
 
@@ -23,7 +24,9 @@ def test_evm():
 
     code = b'6001600260035455'.decode('hex')
 
-    code_hash = [1, 2, 3, 4]
+    h = hashlib.new('sha256')
+    h.update(code)
+    code_hash = h.digest()
 
     input = "Hello World!"
 
