@@ -25,23 +25,40 @@ evm_query_key = enum(
 )
 
 
+def from_uint256(a):
+    # TODO: We could've used int.from_bytes here, but I don't know how to
+    #       access bytes of uint256
+    words = a.words
+    v = 0
+    v = (v << 64) | words[3]
+    v = (v << 64) | words[2]
+    v = (v << 64) | words[1]
+    v = (v << 64) | words[0]
+    return v
+
 @ffi.def_extern()
-def evm_query(env, key, arg, ret):
+def evm_query(env, key, arg):
+    if key == evm_query_key.EVM_SLOAD:
+        arg = from_uint256(arg.uint256)
+    else:
+        arg = None
+
     global evm_query_cb
     if evm_query_cb:
+        env = ffi.from_handle(ffi.cast('void*', env))
         variant = evm_query_cb(env, key, arg)
         if key == evm_query_key.EVM_GAS_PRICE or\
                 key == evm_query_key.EVM_DIFFICULTY or\
                 key == evm_query_key.EVM_BALANCE or\
                 key == evm_query_key.EVM_BLOCKHASH or\
                 key == evm_query_key.EVM_SLOAD:
-            ret[0].uint256 = [list((variant >> i) & 0xFFFFFFFFFFFFFFFF for i in range(0,256,64))]
+            return {'uint256': ([0,1,2,3],)}
 
         if key == evm_query_key.EVM_ADDRESS or\
                 key == evm_query_key.EVM_CALLER or\
                 key == evm_query_key.EVM_ORIGIN or\
                 key == evm_query_key.EVM_COINBASE:
-            ret[0].address.bytes = variant
+            return {'address': ['TODO']}
 
         if key == evm_query_key.EVM_GAS_LIMIT or\
                 key == evm_query_key.EVM_NUMBER or\
@@ -52,14 +69,15 @@ def evm_query(env, key, arg, ret):
             ret[0].data = ffi.new("uint8_t[]", variant)
             ret[0].data_size = len(variant)
 
-    else:
-        ret[0].uint256 = [[0, 0, 0, 0]]
-
 
 @ffi.def_extern()
 def evm_update(env, key, arg1, arg2):
     global evm_update_cb
     if evm_update_cb:
+        env = ffi.from_handle(ffi.cast('void*', env))
+        if key == lib.EVM_SSTORE:
+            arg1 = from_uint256(arg1.uint256)
+            arg2 = from_uint256(arg2.uint256)
         evm_update_cb(env, key, arg1, arg2)
 
 
@@ -80,21 +98,21 @@ class EVMJIT:
 
     def evm_create(self, query_cb=None, update_cb=None, call_cb=None):
         assert self.evm is None, 'evm is already initialized'
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         global evm_query_cb
         global evm_update_cb
         global evm_call_cb
         evm_query_cb = query_cb
         evm_update_cb = update_cb
         evm_call_cb = call_cb
-        self.evm = lib.evm_create_wr(lib.evm_query, lib.evm_update, lib.evm_call)
+        self.evm = lib.evm_create(lib.evm_query, lib.evm_update, lib.evm_call)
 
-    def evm_execute( self, env, mode, code_hash, code, gas, input, value):
+    def evm_execute(self, env, mode, code_hash, code, gas, input, value):
         assert self.evm, 'Please initialize the evm by calling evm_create'
         if env == 0:
             env = ffi.NULL
         ret = lib.evm_execute(self.evm,
-                              env,
+                              ffi.new_handle(env),
                               mode,
                               [code_hash],
                               code,
@@ -131,4 +149,3 @@ class EVMJIT:
     def __del__(self):
         if self.evm:
             lib.evm_destroy(self.evm)
-

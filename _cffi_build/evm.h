@@ -21,12 +21,12 @@ struct evm_hash160 {
 /// 32 bytes of data. For EVM that means big-endian 256-bit integer. Values of
 /// this type are converted to host-endian values inside EVM.
 struct evm_hash256 {
-//    union {
+   union {
         /// The 32 bytes of the integer/hash. Memory aligned to 8 bytes.
-//        uint8_t bytes[32];
+        uint8_t bytes[32];
         /// Additional access by uint64 words to enforce 8 bytes alignment.
         uint64_t words[4];
-//    };
+   };
 };
 
 
@@ -135,19 +135,6 @@ typedef union evm_variant (*evm_query_fn)(struct evm_env* env,
                                           enum evm_query_key key,
 
                                          union evm_variant arg);
-
-// This additional layer added because the cffi does not support returning unions
-// by value (only ptr allowed. The return value moved to argument list so that
-// te caller takes care of moth mem allocation and release.
-/*extern "Python" void  evm_query(struct evm_env* env,
-                                          enum evm_query_key key,
-                                          union evm_variant* arg,
-                                          union evm_variant* ret);*/
-
-typedef void  (*evm_query_ptr)(struct evm_env* env,
-                                          enum evm_query_key key,
-                                          union evm_variant* arg,
-                                          union evm_variant* ret);
 /// The update callback key.
 enum evm_update_key {
     EVM_SSTORE = 0,        ///< Update storage entry
@@ -162,16 +149,6 @@ typedef void (*evm_update_fn)(struct evm_env* env,
                               enum evm_update_key key,
                               union evm_variant arg1,
                               union evm_variant arg2);
-
-/*extern "Python" void evm_update(struct evm_env* env,
-                              enum evm_update_key key,
-                              union evm_variant* arg1,
-                              union evm_variant* arg2);*/
-
-typedef void (*evm_update_ptr)(struct evm_env* env,
-                              enum evm_update_key key,
-                              union evm_variant* arg1,
-                              union evm_variant* arg2);
 
 /// The kind of call-like instruction.
 enum evm_call_kind {
@@ -213,18 +190,6 @@ typedef int64_t (*evm_call_fn)(
     uint8_t* output,
     size_t output_size);
 
-/*extern "Python" int64_t evm_call(
-    struct evm_env* env,
-    enum evm_call_kind kind,
-    int64_t gas,
-    struct evm_hash160 address,
-    struct evm_uint256 value,
-    uint8_t const* input,
-    size_t input_size,
-    uint8_t* output,
-    size_t output_size);*/
-
-
 /// A piece of information about the EVM implementation.
 enum evm_info_key {
     EVM_NAME  = 0,   ///< The name of the EVM implementation. ASCII encoded.
@@ -255,7 +220,7 @@ struct evm_instance* evm_create(evm_query_fn query_fn,
                                        evm_update_fn update_fn,
                                        evm_call_fn call_fn);
 
-struct evm_instance* evm_create_wr(evm_query_ptr eq, evm_update_ptr eu, evm_call_fn ec);
+// struct evm_instance* evm_create_wr(evm_query_ptr eq, evm_update_ptr eu, evm_call_fn ec);
 
 /// Destroys the EVM instance.
 ///
@@ -333,4 +298,3 @@ void evmjit_compile(struct evm_instance* instance, enum evm_mode mode,
                            struct evm_hash256 code_hash);
 
 /// @}
-
