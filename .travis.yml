@@ -1,0 +1,101 @@
+sudo: false
+language: python
+
+python:
+  - "2.7"
+  - "3.3"
+  - "3.4"
+  - "3.5"
+
+env:
+  global:
+    - LD_LIBRARY_PATH=./libevmjit_ext/.libs
+    - DYLD_FALLBACK_LIBRARY_PATH=./libevmjit_ext/.libs
+    - LIB_DIR=./libevmjit_ext/.libs
+    - INCLUDE_DIR=./libevmjit_ext/include
+    - WHEELBUILDER_IMAGE=quay.io/pypa/manylinux1_x86_64
+    - PYPI_USERNAME=insert_pypi_upload_username_here
+  matrix:
+    - BUNDLED=0
+    - BUNDLED=1
+
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/.cache/python-dl
+
+# Sigh... Until Travis issue #2312 is fixed Travis' osx image doesn't properly
+# support Python so we need to manually specify this matrix...
+matrix:
+  include:
+    - os: osx
+      language: generic
+      osx_image: xcode7.1
+      python: 2.7
+      env:
+        - TRAVIS_PYTHON_VERSION=2.7
+        - BUNDLED=1
+    - os: osx
+      language: generic
+      osx_image: xcode7.1
+      python: 3.4
+      env:
+        - TRAVIS_PYTHON_VERSION=3.4
+        - BUNDLED=1
+    - os: osx
+      language: generic
+      osx_image: xcode7.1
+      python: 3.5
+      env:
+        - TRAVIS_PYTHON_VERSION=3.5
+        - BUNDLED=1
+    # Build `manylinux1` wheels
+    - os: linux
+      language: python
+      python: 3.5
+      sudo: required
+      services:
+        - docker
+      env:
+        - BUNDLED=1
+        - BUILD_LINUX_WHEELS=1
+
+addons:
+  apt:
+    packages:
+      - git
+      - libtool
+      - cmake
+      - pkg-config
+      - libffi-dev
+      - libgmp-dev
+
+before_install:
+  - source .travis/install.sh
+
+install:
+  - python setup.py install
+
+# This is a bit of a hack:
+# We want to ensure that we test the installed version, not the local source.
+# For that reason we rename the local source directory before running the
+# tests.
+# Unfortunately this compilcates using coverage. We use '--parallel' and
+# 'combine' together with the `paths` setting in '.coveragerc' to massage it
+# into producing correct paths. For that to work we need to re-rename the
+# source back to it's correct name.
+script:
+  - mv evmjit _evmjit
+  - coverage run --parallel --include="*/site-packages/*.egg/evmjit/*" -m py.test
+  - mv _evmjit evmjit
+  - coverage combine
+
+after_success:
+  - coveralls
+
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: .travis/deploy.sh
+  on:
+    tags: true
