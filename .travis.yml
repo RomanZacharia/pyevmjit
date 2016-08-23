@@ -69,6 +69,7 @@ addons:
       - pkg-config
       - libffi-dev
       - libgmp-dev
+      - libatomic-ops-dev
 
 before_install:
   - source .travis/install.sh
