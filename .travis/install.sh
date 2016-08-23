@@ -80,7 +80,8 @@ if [[ $BUNDLED -eq 0 ]]; then
       tar zxf cmake-*.tar.gz
       builtin pushd cmake*
       ./configure
-      make install
+      make
+      sudo make install
       builtin popd
 	  git clone git://github.com/ethereum/evmjit.git libevmjit_ext
 	  builtin pushd libevmjit_ext
