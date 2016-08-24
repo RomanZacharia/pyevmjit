@@ -88,6 +88,7 @@ before_install:
   - source .travis/install.sh
 
 install:
+  - pip install setuptools==24.0.3
   - python setup.py install
 
 # This is a bit of a hack:

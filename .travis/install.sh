@@ -76,13 +76,6 @@ fi
 
 # Build lib-evmjit to test non bundled installation
 if [[ $BUNDLED -eq 0 ]]; then
-      wget --no-check-certificate https://cmake.org/files/v3.5/cmake-3.5.2.tar.gz
-      tar zxf cmake-*.tar.gz
-      builtin pushd cmake*
-      ./configure
-      make
-      sudo make install
-      builtin popd
 	  git clone git://github.com/ethereum/evmjit.git libevmjit_ext
 	  builtin pushd libevmjit_ext
 	  mkdir build && builtin pushd $_

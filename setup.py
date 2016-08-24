@@ -37,11 +37,11 @@ from setup_support import absolute, build_flags, has_system_lib
 LIB_TARBALL_URL = "https://github.com/ethereum/evmjit/archive/develop.tar.gz"
 
 
-# We require setuptools >= 3.3
-if [int(i) for i in setuptools_version.split('.')] < [3, 3]:
+# We require setuptools >= 24.0
+if [int(i) for i in setuptools_version.split('.')] < [24, 0]:
     raise SystemExit(
         "Your setuptools version ({}) is too old to correctly install this "
-        "package. Please upgrade to a newer version (>= 3.3).".format(setuptools_version)
+        "package. Please upgrade to a newer version (>= 24.0).".format(setuptools_version)
     )
 
 # Ensure pkg-config is available
