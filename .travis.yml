@@ -24,6 +24,7 @@ cache:
   directories:
     - $HOME/.cache/pip
     - $HOME/.cache/python-dl
+    - directories: libevmjit_ext/build
 
 # Sigh... Until Travis issue #2312 is fixed Travis' osx image doesn't properly
 # support Python so we need to manually specify this matrix...
