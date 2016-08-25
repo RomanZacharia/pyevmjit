@@ -147,8 +147,8 @@ class build_clib(_build_clib):
         if has_system_lib():
             log.info("Using system library")
             return
-
-        build_temp = os.path.abspath(self.build_temp)
+        return
+        """build_temp = os.path.abspath(self.build_temp)
 
         try:
             os.makedirs(build_temp)
@@ -167,6 +167,7 @@ class build_clib(_build_clib):
             self.build_flags['define'].append(('CFFI_ENABLE_RECOVERY', None))
         else:
             pass
+        """
 
 
 class build_ext(_build_ext):
@@ -218,8 +219,8 @@ setup(
     ],
 
     cmdclass={
-        # 'build_clib': build_clib,
-        # 'build_ext': build_ext,
+        'build_clib': build_clib,
+        'build_ext': build_ext,
         'develop': develop,
         'egg_info': egg_info,
         'sdist': sdist,
