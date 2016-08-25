@@ -81,7 +81,7 @@ if [[ $BUNDLED -eq 0 ]]; then
 	  mkdir build && builtin pushd $_
 	  cmake ..
 	  make
-	  make install
+	  sudo make install
 	  builtin popd
 	  builtin popd
 fi
