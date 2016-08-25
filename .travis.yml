@@ -21,11 +21,12 @@ env:
 #    - BUNDLED=1
 
 cache:
+  - ccache
   directories:
     - $HOME/.cache/pip
     - $HOME/.cache/python-dl
     - $HOME/pyevmjit/libevmjit_ext/build
-    - /home/travis/build/RomanZacharia/pyevmjit/libevmjit_ext/build
+#    - /home/travis/build/RomanZacharia/pyevmjit/libevmjit_ext/build
 
 # Sigh... Until Travis issue #2312 is fixed Travis' osx image doesn't properly
 # support Python so we need to manually specify this matrix...
