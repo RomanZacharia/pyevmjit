@@ -83,6 +83,7 @@ if [[ $BUNDLED -eq 0 ]]; then
 	      cmake ..
 	      make
 	  else
+	      builtin pushd build
 	      builtin pushd libevmjit_ext
 	  fi
 	  sudo make install
