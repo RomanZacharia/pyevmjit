@@ -18,7 +18,7 @@ env:
     - PYPI_USERNAME=insert_pypi_upload_username_here
   matrix:
     - BUNDLED=0
-#    - BUNDLED=1
+    - BUNDLED=1
 
 cache:
   - ccache
