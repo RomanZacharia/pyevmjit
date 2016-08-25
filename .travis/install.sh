@@ -81,6 +81,7 @@ if [[ $BUNDLED -eq 0 ]]; then
 	  mkdir build && builtin pushd $_
 	  cmake ..
 	  make
+	  cp libevmjit/libevmjit.so ../..
 	  builtin popd
 	  builtin popd
 fi

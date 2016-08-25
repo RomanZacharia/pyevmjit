@@ -38,10 +38,10 @@ LIB_TARBALL_URL = "https://github.com/ethereum/evmjit/archive/develop.tar.gz"
 
 
 # We require setuptools >= 24.0
-if [int(i) for i in setuptools_version.split('.')] < [24, 0]:
+if [int(i) for i in setuptools_version.split('.')] < [20, 0]:
     raise SystemExit(
         "Your setuptools version ({}) is too old to correctly install this "
-        "package. Please upgrade to a newer version (>= 24.0).".format(setuptools_version)
+        "package. Please upgrade to a newer version (>= 20.0).".format(setuptools_version)
     )
 
 # Ensure pkg-config is available
