@@ -155,7 +155,7 @@ class build_clib(_build_clib):
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
-
+        print("build_temp: "+build_temp)
         subprocess.check_call(["cmake"], cwd=build_temp)
         subprocess.check_call(["make"], cwd=build_temp)
         subprocess.check_call(["make", "install"], cwd=build_temp)
@@ -218,8 +218,8 @@ setup(
     ],
 
     cmdclass={
-        'build_clib': build_clib,
-        'build_ext': build_ext,
+        # 'build_clib': build_clib,
+        # 'build_ext': build_ext,
         'develop': develop,
         'egg_info': egg_info,
         'sdist': sdist,
