@@ -78,14 +78,14 @@ fi
 if [[ $BUNDLED -eq 0 ]]; then
       if [ ! -d "libevmjit_ext" ]; then
 	  	  git clone git://github.com/ethereum/evmjit.git libevmjit_ext
-	      builtin pushd libevmjit_ext
-	      mkdir build && builtin pushd $_
-	      cmake ..
-	      make
-	  else
-	      builtin pushd build
-	      builtin pushd libevmjit_ext
 	  fi
+	      builtin pushd libevmjit_ext
+	  if [ ! -d "build" ]; then
+	      mkdir build
+	  fi
+	  builtin pushd build
+	  cmake ..
+	  make
 	  sudo make install
 	  builtin popd
 	  builtin popd
