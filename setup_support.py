@@ -71,6 +71,9 @@ def _find_lib():
     from cffi import FFI
     ffi = FFI()
     try:
+        import os
+        cwd = os.getcwd()
+        print(cwd)
         ffi.dlopen("evmjit")
     except OSError:
         if 'LIB_DIR' in os.environ:
