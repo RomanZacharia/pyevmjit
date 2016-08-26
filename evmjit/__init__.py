@@ -92,6 +92,7 @@ def evm_call(env, kind, gas, address, value, input, input_size, output, output_s
 
 class EVMJIT:
     evm = None
+    interface = None
 
     def __init__(self):
         pass
@@ -105,13 +106,17 @@ class EVMJIT:
         evm_query_cb = query_cb
         evm_update_cb = update_cb
         evm_call_cb = call_cb
-        self.evm = lib.evm_create(lib.evm_query, lib.evm_update, lib.evm_call)
+        self.interface = lib.evmjit_get_interface()
+        assert self.interface.abi_version == lib.EVM_ABI_VERSION, 'ABI version mismatch'
+        self.evm = self.interface.create(lib.evm_query, lib.evm_update, lib.evm_call)
 
     def evm_execute(self, env, mode, code_hash, code, gas, input, value):
         assert self.evm, 'Please initialize the evm by calling evm_create'
         if env == 0:
             env = ffi.NULL
-        ret = lib.evm_execute(self.evm,
+        assert len(code_hash) == 32
+
+        ret = self.interface.execute(self.evm,
                               ffi.new_handle(env),
                               mode,
                               [code_hash],
@@ -123,29 +128,27 @@ class EVMJIT:
                               [value])
         return ret
 
-    def evm_destroy_result(self, result):
-        lib.evm_destroy_result(result)
+    def evm_release_result(self, result):
+        self.interface.release_result([result])
 
     def evm_destroy(self):
         if self.evm:
-            lib.evm_destroy(self.evm)
+            self.interface.destroy(self.evm)
             self.evm = None
 
-    def evm_get_info(key):
-        lib.evm_get_info(key)
-
-    def evm_set_option(self, name, value):
+    def set_option(self, name, value):
         assert self.evm, 'Please initialize the evm by calling evm_create'
-        return lib.evm_set_option(self.evm, name, value)
+        return self.interface.set_option(self.evm, name, value)
 
-    def evmjit_is_code_ready(self, mode, code_hash):
+    def is_code_ready(self, mode, code_hash):
         assert self.evm, 'Please initialize the evm by calling evm_create'
-        return lib.evmjit_is_code_ready(self.evm, mode, code_hash)
+        status = self.interface.get_code_status(self.evm, mode, [code_hash])
+        return status == lib.EVM_READY
 
-    def evmjit_compile(self, mode, code, code_hash):
+    def prepare_code(self, mode, code_hash, code):
         assert self.evm, 'Please initialize the evm by calling evm_create'
-        lib.evmjit_compile(self.evm, mode, code, len(code), [code_hash])
+        self.interface.prepare_code(self.evm, mode, code, len(code), [code_hash])
 
     def __del__(self):
         if self.evm:
-            lib.evm_destroy(self.evm)
+            self.interface.destroy(self.evm)
