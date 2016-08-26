@@ -18,7 +18,7 @@ env:
     - PYPI_USERNAME=insert_pypi_upload_username_here
   matrix:
     - BUNDLED=0
-    - BUNDLED=1
+#    - BUNDLED=1
 
 cache:
   directories:
@@ -74,11 +74,12 @@ addons:
       - libgmp-dev
 
 before_install:
-  - source .travis/install.sh
+   - echo "before_install section executed"
+#  - source .travis/install.sh
 
 install:
   - pip install setuptools==24.0.3
-  - python setup.py install
+#  - python setup.py install
 
 # This is a bit of a hack:
 # We want to ensure that we test the installed version, not the local source.
@@ -89,17 +90,20 @@ install:
 # into producing correct paths. For that to work we need to re-rename the
 # source back to it's correct name.
 script:
-  - mv evmjit _evmjit
-  - coverage run --parallel --include="*/site-packages/*.egg/evmjit/*" -m py.test
-  - mv _evmjit evmjit
-  - coverage combine
+   - echo "Script section executed"
+#  - mv evmjit _evmjit
+#  - coverage run --parallel --include="*/site-packages/*.egg/evmjit/*" -m py.test
+#  - mv _evmjit evmjit
+#  - coverage combine
 
 after_success:
-  - coveralls
+   - echo "after_success section executed"
+#  - coveralls
 
 deploy:
-  provider: script
-  skip_cleanup: true
-  script: .travis/deploy.sh
-  on:
-    tags: true
+   - echo "deploy section executed"
+#  provider: script
+#  skip_cleanup: true
+#  script: .travis/deploy.sh
+#  on:
+#    tags: true
