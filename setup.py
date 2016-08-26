@@ -212,7 +212,7 @@ setup(
     install_requires=['cffi>=1.3.0'],
     tests_require=['pytest==2.8.7'],
 
-    packages=find_packages(exclude=('_cffi_build', '_cffi_build.*', 'libevmjit')),
+    packages=find_packages(exclude=('_cffi_build', '_cffi_build.*', 'evmjit')),
     ext_package="evmjit",
     cffi_modules=[
         "_cffi_build/build.py:ffi"
