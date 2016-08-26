@@ -76,7 +76,7 @@ fi
 
 # Build lib-evmjit to test non bundled installation
 if [[ $BUNDLED -eq 0 ]]; then
-      if [ ! -d "libevmjit_ext" ]; then
+      if [ ! -f "libevmjit_ext/CMakeLists.txt" ]; then
 	  	  git clone git://github.com/ethereum/evmjit.git libevmjit_ext
 	  fi
 	      builtin pushd libevmjit_ext
