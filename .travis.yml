@@ -101,9 +101,9 @@ after_success:
 #  - coveralls
 
 deploy:
-   - echo "deploy section executed"
-#  provider: script
-#  skip_cleanup: true
+  provider: script
+  skip_cleanup: true
 #  script: .travis/deploy.sh
-#  on:
-#    tags: true
+  script: echo "deploy section executed"
+  on:
+    tags: true
