@@ -10,10 +10,10 @@ python:
 
 env:
   global:
-    - LD_LIBRARY_PATH=./libevmjit_ext/.libs
-    - DYLD_FALLBACK_LIBRARY_PATH=./libevmjit_ext/.libs
-    - LIB_DIR=./libevmjit_ext/.libs
-    - INCLUDE_DIR=./libevmjit_ext/include
+    - LD_LIBRARY_PATH=./libevmjit_bld/.libs
+    - DYLD_FALLBACK_LIBRARY_PATH=./libevmjit_bld/.libs
+    - LIB_DIR=./libevmjit_bld/.libs
+    - INCLUDE_DIR=./libevmjit_bld/include
     - WHEELBUILDER_IMAGE=quay.io/pypa/manylinux1_x86_64
     - PYPI_USERNAME=insert_pypi_upload_username_here
   matrix:
@@ -24,7 +24,7 @@ cache:
   directories:
     - $HOME/.cache/pip
     - $HOME/.cache/python-dl
-    - /home/travis/build/RomanZacharia/pyevmjit/libevmjit_ext/build
+    - /home/travis/build/RomanZacharia/pyevmjit/libevmjit_bld
 
 # Sigh... Until Travis issue #2312 is fixed Travis' osx image doesn't properly
 # support Python so we need to manually specify this matrix...
