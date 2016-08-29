@@ -92,6 +92,8 @@ install:
 script:
    - echo "Script section executed"
    - pip freeze | grep evmjit
+   - ls -l  /tmp/easy_install-uBgfXm/pytest-runner-2.6.2/.eggs/setuptools_scm-1.11.1-py2.7.egg
+   - which python
    - mv evmjit _evmjit
    - coverage run --parallel --include="*/site-packages/*.egg/evmjit/*" -m py.test tests/test.py
    - mv _evmjit evmjit
