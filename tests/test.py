@@ -1,3 +1,9 @@
+import sys
+from pprint import pprint
+pprint('Executable: '+sys.executable)
+import pip
+pprint(sorted(["%s==%s" % (i.key, i.version) for i in pip.get_installed_distributions()]))
+
 import hashlib
 from evmjit import EVMJIT, evm_mode
 
