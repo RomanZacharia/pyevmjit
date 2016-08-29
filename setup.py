@@ -141,7 +141,7 @@ class build_clib(_build_clib):
         raise Exception("check_library_list")
 
     def get_library_names(self):
-        return build_flags('libevmjit', 'l', os.path.abspath(self.build_temp))
+        return [] # build_flags('libevmjit', 'l', os.path.abspath(self.build_temp))
 
     def run(self):
         if has_system_lib():
