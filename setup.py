@@ -172,6 +172,11 @@ class build_clib(_build_clib):
 
 class build_ext(_build_ext):
     def run(self):
+        from pprint import pprint
+        pprint(os.listdir('.'))
+        pprint('\n Contents of /usr/local/lib:')
+        pprint(os.listdir('/usr/local/lib'))
+        #import pdb; pdb.set_trace()
         if self.distribution.has_c_libraries():
             build_clib = self.get_finalized_command("build_clib")
             self.include_dirs.append(
