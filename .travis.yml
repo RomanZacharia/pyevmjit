@@ -92,7 +92,8 @@ install:
 script:
    - echo "Script section executed"
    - pip freeze | grep evmjit
-   - ls -l /home/travis/virtualenv/python2.7.10/lib/python2.7/site-packages/evmjit-0.1.1-py2.7-linux-x86_64.egg
+   - ls -l /home/travis/virtualenv/python2.7.10/lib/python2.7/site-packages/evmjit-0.1.1-py2.7-linux-x86_64.egg/evmjit
+   - ls -l /home/travis/virtualenv/python2.7.10/lib/python2.7/site-packages
    - which python
    - mv evmjit _evmjit
    - coverage run --parallel --include="*/site-packages/*.egg/evmjit/*" -m py.test tests/test.py
