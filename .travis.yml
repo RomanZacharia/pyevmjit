@@ -91,10 +91,10 @@ install:
 # source back to it's correct name.
 script:
    - echo "Script section executed"
-#  - mv evmjit _evmjit
-#  - coverage run --parallel --include="*/site-packages/*.egg/evmjit/*" -m py.test
-#  - mv _evmjit evmjit
-#  - coverage combine
+  - mv evmjit _evmjit
+  - coverage run --parallel --include="*/site-packages/*.egg/evmjit/*" -m py.test
+  - mv _evmjit evmjit
+  - coverage combine
 
 after_success:
    - echo "after_success section executed"
