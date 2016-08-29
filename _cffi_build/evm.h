@@ -1,3 +1,30 @@
+/// EVM-C -- C interface to Ethereum Virtual Machine
+///
+/// ## High level design rules
+/// 1. Pass function arguments and results by value.
+///    This rule comes from modern C++ and tries to avoid costly alias analysis
+///    needed for optimization. As the result we have a lots of complex structs
+///    and unions. And variable sized arrays of bytes cannot be passed by copy.
+/// 2. The EVM operates on integers so it prefers values to be host-endian.
+///    On the other hand, LLVM can generate good code for byte swaping.
+///    The interface also tries to match host application "natural" endianess.
+///    I would like to know what endianess you use and where.
+///
+/// @defgroup EVMC EVM-C
+/// @{
+// #ifndef EVM_H
+// #define EVM_H
+//
+// #include <stdint.h>    // Definition of int64_t, uint64_t.
+// #include <stddef.h>    // Definition of size_t.
+//
+// #if __cplusplus
+// extern "C" {
+// #endif
+
+/// The EVM-C ABI version number matching the interface declared in this file.
+static const uint32_t EVM_ABI_VERSION = 0;
+
 /// Host-endian 256-bit integer.
 ///
 /// 32 bytes of data representing host-endian (that means little-endian almost
@@ -9,7 +36,7 @@ struct evm_uint256 {
     uint64_t words[4];
 };
 
-/// 160-bit hash suitable for keeping an Ethereum address.
+/// Big-endian 160-bit hash suitable for keeping an Ethereum address.
 struct evm_hash160 {
     /// The 20 bytes of the hash.
     uint8_t bytes[20];
@@ -21,32 +48,54 @@ struct evm_hash160 {
 /// 32 bytes of data. For EVM that means big-endian 256-bit integer. Values of
 /// this type are converted to host-endian values inside EVM.
 struct evm_hash256 {
-   union {
+    // union {
         /// The 32 bytes of the integer/hash. Memory aligned to 8 bytes.
         uint8_t bytes[32];
         /// Additional access by uint64 words to enforce 8 bytes alignment.
-        uint64_t words[4];
-   };
+        // uint64_t words[4];
+    // };
 };
 
+/// The execution result code.
+enum evm_result_code {
+    EVM_SUCCESS = 0,               ///< Execution finished with success.
+    EVM_FAILURE = 1,               ///< Generic execution failure.
+    EVM_OUT_OF_GAS = 2,
+    EVM_BAD_INSTRUCTION = 3,
+    EVM_BAD_JUMP_DESTINATION = 4,
+    EVM_STACK_OVERFLOW = 5,
+    EVM_STACK_UNDERFLOW = 6,
+};
 
-//#define EVM_EXCEPTION (-9223372036854775807LL -1)  ///< The execution ended with an exception.
-
-/// Complex struct representing execution result.
+/// The EVM code execution result.
 struct evm_result {
-    /// Gas left after execution or exception indicator.
+    /// The execution result code.
+    enum evm_result_code code;
+
+    /// The amount of gas left after the execution.
+    ///
+    /// The value is valid only if evm_result::code == ::EVM_SUCCESS.
     int64_t gas_left;
 
-    /// Rerefence to output data. The memory containing the output data
-    /// is owned by EVM and is freed with evm_destroy_result().
+    /// The reference to output data. The memory containing the output data
+    /// is owned by EVM and is freed with evm_release_result_fn().
     uint8_t const* output_data;
 
-    /// Size of the output data.
+    /// The size of the output data.
     size_t output_size;
 
-    /// Pointer to EVM-owned memory.
+    /// @name Optional
+    /// The optional information that EVM is not required to provide.
+    /// @{
+
+    /// The pointer to EVM-owned memory. For EVM internal use.
     /// @see output_data.
     void* internal_memory;
+
+    /// The error message explaining the result code.
+    char const* error_message;
+
+    /// @}
 };
 
 /// The query callback key.
@@ -124,17 +173,17 @@ union evm_variant {
 /// ::EVM_ORIGIN          |                      | evm_variant::address
 /// ::EVM_COINBASE        |                      | evm_variant::address
 /// ::EVM_DIFFICULTY      |                      | evm_variant::uint256
-/// ::EVM_GAS_LIMIT       |                      | evm_variant::int64
+/// ::EVM_GAS_LIMIT       |                      | evm_variant::uint256
 /// ::EVM_NUMBER          |                      | evm_variant::int64?
 /// ::EVM_TIMESTAMP       |                      | evm_variant::int64?
-/// ::EVM_CODE_BY_ADDRESS | evm_variant::address | evm_variant::bytes
+/// ::EVM_CODE_BY_ADDRESS | evm_variant::address | evm_variant::data
 /// ::EVM_BALANCE         | evm_variant::address | evm_variant::uint256
-/// ::EVM_BLOCKHASH       | evm_variant::int64   | evm_variant::uint256
+/// ::EVM_BLOCKHASH       | evm_variant::int64   | evm_variant::hash256
 /// ::EVM_SLOAD           | evm_variant::uint256 | evm_variant::uint256?
 typedef union evm_variant (*evm_query_fn)(struct evm_env* env,
                                           enum evm_query_key key,
+                                          union evm_variant arg);
 
-                                         union evm_variant arg);
 /// The update callback key.
 enum evm_update_key {
     EVM_SSTORE = 0,        ///< Update storage entry
@@ -144,7 +193,24 @@ enum evm_update_key {
 };
 
 
-/// Callback function for modifying a contract state.
+/// Update callback function.
+///
+/// This callback function is used by the EVM to modify contract state in the
+/// host application.
+/// @param env  Pointer to execution environment managed by the host
+///             application.
+/// @param key  The kind of the update. See evm_update_key and details below.
+/// @param arg1 Additional argument to the update. It has defined value only for
+///             the subset of update keys.
+/// @param arg1 Additional argument to the update. It has defined value only for
+///             the subset of update keys.
+///
+/// ## Types of updates
+/// Key                   | Arg1                 | Arg2
+/// ----------------------| -------------------- | --------------------
+/// ::EVM_SSTORE          | evm_variant::uint256 | evm_variant::uint256
+/// ::EVM_LOG             | evm_variant::data    | evm_variant::data
+/// ::EVM_SELFDESTRUCT    | evm_variant::address | n/a
 typedef void (*evm_update_fn)(struct evm_env* env,
                               enum evm_update_key key,
                               union evm_variant arg1,
@@ -158,6 +224,9 @@ enum evm_call_kind {
     EVM_CREATE = 3        ///< Request CREATE. Semantic of some params changes.
 };
 
+/// The flag indicating call failure in evm_call_fn().
+static const int64_t EVM_CALL_FAILURE = INT64_MIN;
+
 /// Pointer to the callback function supporting EVM calls.
 ///
 /// @param env          Pointer to execution environment managed by the host
@@ -168,14 +237,14 @@ enum evm_call_kind {
 ///                     of CREATE.
 /// @param value        The value sent to the callee. The endowment in case of
 ///                     CREATE.
-/// @param input        The call input data or the create init code.
+/// @param input        The call input data or the CREATE init code.
 /// @param input_size   The size of the input data.
 /// @param output       The reference to the memory where the call output is to
-///                     be copied. In case of create, the memory is guaranteed
-///                     to be at least 160 bytes to hold the address of the
+///                     be copied. In case of CREATE, the memory is guaranteed
+///                     to be at least 20 bytes to hold the address of the
 ///                     created contract.
-/// @param output_data  The size of the output data. In case of create, expected
-///                     value is 160.
+/// @param output_data  The size of the output data. In case of CREATE, expected
+///                     value is 20.
 /// @return      If non-negative - the amount of gas left,
 ///              If negative - an exception occurred during the call/create.
 ///              There is no need to set 0 address in the output in this case.
@@ -190,17 +259,6 @@ typedef int64_t (*evm_call_fn)(
     uint8_t* output,
     size_t output_size);
 
-/// A piece of information about the EVM implementation.
-enum evm_info_key {
-    EVM_NAME  = 0,   ///< The name of the EVM implementation. ASCII encoded.
-    EVM_VERSION = 1  ///< The software version of the EVM.
-};
-
-/// Request information about the EVM implementation.
-///
-/// @param key  What do you want to know?
-/// @return     Requested information as a c-string. Nonnull.
-char const* evm_get_info(enum evm_info_key key);
 
 /// Opaque type representing a EVM instance.
 struct evm_instance;
@@ -216,16 +274,14 @@ struct evm_instance;
 /// @param update_fn  Pointer to update callback function. Nonnull.
 /// @param call_fn    Pointer to call callback function. Nonnull.
 /// @return           Pointer to the created EVM instance.
-struct evm_instance* evm_create(evm_query_fn query_fn,
-                                       evm_update_fn update_fn,
-                                       evm_call_fn call_fn);
-
-// struct evm_instance* evm_create_wr(evm_query_ptr eq, evm_update_ptr eu, evm_call_fn ec);
+typedef struct evm_instance* (*evm_create_fn)(evm_query_fn query_fn,
+                                              evm_update_fn update_fn,
+                                              evm_call_fn call_fn);
 
 /// Destroys the EVM instance.
 ///
 /// @param evm  The EVM instance to be destroyed.
-void evm_destroy(struct evm_instance* evm);
+typedef void (*evm_destroy_fn)(struct evm_instance* evm);
 
 
 /// Configures the EVM instance.
@@ -238,10 +294,10 @@ void evm_destroy(struct evm_instance* evm);
 /// @param evm    The EVM instance to be configured.
 /// @param name   The option name. Cannot be null.
 /// @param value  The new option value. Cannot be null.
-/// @return       True if the option set successfully.
-unsigned char evm_set_option(struct evm_instance* evm,
-                           char const* name,
-                           char const* value);
+/// @return       1 if the option set successfully, 0 otherwise.
+typedef int (*evm_set_option_fn)(struct evm_instance* evm,
+                                 char const* name,
+                                 char const* value);
 
 
 /// EVM compatibility mode aka chain mode.
@@ -271,30 +327,107 @@ enum evm_mode {
 /// @param input_size  The size of the input data.
 /// @param value       Call value.
 /// @return            All execution results.
-struct evm_result evm_execute(struct evm_instance* instance,
-                                     struct evm_env* env,
-                                     enum evm_mode mode,
-                                     struct evm_hash256 code_hash,
-                                     uint8_t const* code,
-                                     size_t code_size,
-                                     int64_t gas,
-                                     uint8_t const* input,
-                                     size_t input_size,
-                                     struct evm_uint256 value);
+typedef struct evm_result (*evm_execute_fn)(struct evm_instance* instance,
+                                            struct evm_env* env,
+                                            enum evm_mode mode,
+                                            struct evm_hash256 code_hash,
+                                            uint8_t const* code,
+                                            size_t code_size,
+                                            int64_t gas,
+                                            uint8_t const* input,
+                                            size_t input_size,
+                                            struct evm_uint256 value);
 
-/// Destroys execution result.
-void evm_destroy_result(struct evm_result);
+/// Releases resources assigned to an execution result.
+///
+/// This function releases memory (and other resources, if any) assigned to the
+/// specified execution result making the result object invalid.
+///
+/// @param result  The execution result which resource are to be released. The
+///                result itself it not modified by this function, but becomes
+///                invalid and user should discard it as well.
+typedef void (*evm_release_result_fn)(struct evm_result const* result);
+
+/// Status of a code in VM. Useful for JIT-like implementations.
+enum evm_code_status {
+    /// The code is uknown to the VM.
+    EVM_UNKNOWN,
+
+    /// The code has been compiled and is available in memory.
+    EVM_READY,
+
+    /// The compiled version of the code is available in on-disk cache.
+    EVM_CACHED,
+};
 
 
-/// @defgroup EVMJIT EVMJIT extenstion to EVM-C
-/// @{
+/// Get information the status of the code in the VM.
+typedef enum evm_code_status
+(*evm_get_code_status_fn)(struct evm_instance* instance,
+                          enum evm_mode mode,
+                          struct evm_hash256 code_hash);
+
+/// Request preparation of the code for faster execution. It is not required
+/// to execute the code but allows compilation of the code ahead of time in
+/// JIT-like VMs.
+typedef void (*evm_prepare_code_fn)(struct evm_instance* instance,
+                                    enum evm_mode mode,
+                                    uint8_t const* code,
+                                    size_t code_size,
+                                    struct evm_hash256 code_hash);
+
+/// VM interface.
+///
+/// Defines the implementation of EVM-C interface for a VM.
+struct evm_interface {
+    /// EVM-C ABI version implemented by the VM.
+    ///
+    /// For future use to detect ABI incompatibilities. The EVM-C ABI version
+    /// represented by this file is in ::EVM_ABI_VERSION.
+    uint32_t abi_version;
+
+    /// Pointer to function creating a VM's instance.
+    evm_create_fn create;
+
+    /// Pointer to function destroying a VM's instance.
+    evm_destroy_fn destroy;
+
+    /// Pointer to function execuing a code in a VM.
+    evm_execute_fn execute;
+
+    /// Pointer to function releasing an execution result.
+    evm_release_result_fn release_result;
+
+    /// Optional pointer to function returning a status of a code.
+    ///
+    /// If the VM does not support this feature the pointer can be NULL.
+    evm_get_code_status_fn get_code_status;
+
+    /// Optional pointer to function compiling  a code.
+    ///
+    /// If the VM does not support this feature the pointer can be NULL.
+    evm_prepare_code_fn prepare_code;
+
+    /// Optional pointer to function modifying VM's options.
+    ///
+    /// If the VM does not support this feature the pointer can be NULL.
+    evm_set_option_fn set_option;
+};
+
+/// Example of a function exporting an interface for an example VM.
+///
+/// Each VM implementation is obligates to provided a function returning
+/// VM's interface. The function has to be named as `<vm-name>_get_interface()`.
+///
+/// @return  VM interface
+// struct evm_interface examplevm_get_interface(void);
+
+struct evm_interface evmjit_get_interface(void);
 
 
-unsigned char evmjit_is_code_ready(struct evm_instance* instance, enum evm_mode mode,
-                                 struct evm_hash256 code_hash);
-
-void evmjit_compile(struct evm_instance* instance, enum evm_mode mode,
-                           uint8_t const* code, size_t code_size,
-                           struct evm_hash256 code_hash);
-
+// #if __cplusplus
+// }
+// #endif
+//
+// #endif  // EVM_H
 /// @}
