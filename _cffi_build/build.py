@@ -32,7 +32,7 @@ def _mk_ffi(sources, name="_libevmjit", bundled=True, **kwargs):
 
 
 _base = [Source(absolute("evm.h"), "#include \"_cffi_build/evm.h\"",)]
-ffi = _mk_ffi(_base, libraries=['evmjit'])
+ffi = _mk_ffi(_base, libraries=['evmjit-standalone', 'stdc++'])
 ffi.cdef("""
     extern "Python" union evm_variant evm_query(struct evm_env* env,
                                           enum evm_query_key key,
