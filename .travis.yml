@@ -76,6 +76,7 @@ addons:
 before_install:
    - echo "before_install section executed"
    - source .travis/install.sh
+   - ls -l
 
 install:
   - pip install setuptools==24.0.3
