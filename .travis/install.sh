@@ -87,7 +87,7 @@ if [[ $BUNDLED -eq 0 ]]; then
 	  cmake ..
 	  make
 	  ls -l libevmjit
-	  cp libevmjit/libevmjit-static.a ../../
+	  cp libevmjit/libevmjit-static.a ../../libevmjitst.a
 	  builtin popd
 	  builtin popd
 fi
