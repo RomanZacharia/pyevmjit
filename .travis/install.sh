@@ -86,7 +86,8 @@ if [[ $BUNDLED -eq 0 ]]; then
 	  builtin pushd build
 	  cmake ..
 	  make
-	  cp libevmjit-static.a ../../
+	  ls -l
+#	  cp libevmjit-static.a ../../
 	  builtin popd
 	  builtin popd
 fi
