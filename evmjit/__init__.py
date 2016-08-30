@@ -3,6 +3,7 @@ evm_query_cb = None
 evm_update_cb = None
 evm_call_cb = None
 
+
 def enum(**enums):
     return type('Enum', (), enums)
 
@@ -35,6 +36,7 @@ def from_uint256(a):
     v = (v << 64) | words[1]
     v = (v << 64) | words[0]
     return v
+
 
 @ffi.def_extern()
 def evm_query(env, key, arg):
@@ -147,7 +149,7 @@ class EVMJIT:
 
     def prepare_code(self, mode, code_hash, code):
         assert self.evm, 'Please initialize the evm by calling evm_create'
-        self.interface.prepare_code(self.evm, mode, code, len(code), [code_hash])
+        self.interface.prepare_code(self.evm, mode, [code_hash], code, len(code))
 
     def __del__(self):
         if self.evm:
