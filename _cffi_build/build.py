@@ -38,7 +38,7 @@ pprint(os.listdir('.'))
 
 
 _base = [Source(absolute("evm.h"), "#include \"" + absolute("evm.h") + "\"",)]
-ffi = _mk_ffi(_base, libraries=['libevmjit-static'])
+ffi = _mk_ffi(_base, library_dirs=os.getcwd(), libraries=['evmjit-static'])
 ffi.cdef("""
     extern "Python" union evm_variant evm_query(struct evm_env* env,
                                           enum evm_query_key key,
