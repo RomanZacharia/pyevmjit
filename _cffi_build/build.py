@@ -31,8 +31,14 @@ def _mk_ffi(sources, name="_libevmjit", bundled=True, **kwargs):
     return ffi
 
 
+from pprint import pprint
+pprint('The dir where the linker is executed:')
+pprint(os.getcwd())
+pprint(os.listdir('.'))
+
+
 _base = [Source(absolute("evm.h"), "#include \"" + absolute("evm.h") + "\"",)]
-ffi = _mk_ffi(_base, libraries=['evmjit-static'])
+ffi = _mk_ffi(_base, libraries=['libevmjit-static'])
 ffi.cdef("""
     extern "Python" union evm_variant evm_query(struct evm_env* env,
                                           enum evm_query_key key,
