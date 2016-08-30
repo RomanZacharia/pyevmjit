@@ -80,7 +80,7 @@ before_install:
 
 install:
   - pip install setuptools==24.0.3
-  - python setup.py install
+#  - python setup.py install
 
 # This is a bit of a hack:
 # We want to ensure that we test the installed version, not the local source.
