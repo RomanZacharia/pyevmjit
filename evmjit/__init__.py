@@ -1,4 +1,4 @@
-from _libevmjit import ffi, lib
+from _evmjit import ffi, lib
 
 
 def enum(**enums):
@@ -23,33 +23,30 @@ evm_query_key = enum(
 )
 
 
-def from_uint256(a):
-    # TODO: We could've used int.from_bytes here, but I don't know how to
-    #       access bytes of uint256
-    words = a.words
-    v = 0
-    v = (v << 64) | words[3]
-    v = (v << 64) | words[2]
-    v = (v << 64) | words[1]
-    v = (v << 64) | words[0]
-    return v
+def from_uint256be(uint256be):
+    """ Converts EVM-C uint256be to integer."""
+    if hasattr(int, 'from_bytes'):  # Python 3
+        return int.from_bytes(uint256be.bytes, byteorder='big')
+    return int(bytes(uint256be.bytes).encode('hex'), 16)
 
 
-def to_uint256(x):
-    """ Converts integer to EVM-C uint256."""
+def to_uint256be(x):
+    """ Converts integer to EVM-C uint256be."""
     assert x < 2**256
-    words = []
-    for i in range(4):
-        word = x & 0xffffffffffffffff
-        words.append(word)
-        x = x >> 64
-    return (words, )
+
+    if hasattr(int, 'to_bytes'):  # Python 3
+        uint256be = x.to_bytes(256, byteorder='big')
+    else:
+        uint256be = '{:064x}'.format(x).decode('hex')
+    # Must be returned inside list or tuple to be converted to evm_uint256be
+    # struct by CFFI.
+    return (uint256be,)
 
 
 @ffi.def_extern()
 def evm_query(env, key, arg):
     if key == evm_query_key.EVM_SLOAD:
-        arg = from_uint256(arg.uint256)
+        arg = from_uint256be(arg.uint256be)
     else:
         arg = None
 
@@ -62,7 +59,7 @@ def evm_query(env, key, arg):
                evm_query_key.EVM_BALANCE,
                evm_query_key.EVM_BLOCKHASH,
                evm_query_key.EVM_SLOAD):
-        return {'uint256': to_uint256(res)}
+        return {'uint256be': to_uint256be(res)}
 
     if key in (evm_query_key.EVM_ADDRESS,
                evm_query_key.EVM_CALLER,
@@ -86,8 +83,8 @@ def evm_update(env, key, arg1, arg2):
 
     # Preprocess arguments.
     if key == lib.EVM_SSTORE:
-        arg1 = from_uint256(arg1.uint256)
-        arg2 = from_uint256(arg2.uint256)
+        arg1 = from_uint256be(arg1.uint256be)
+        arg2 = from_uint256be(arg2.uint256be)
 
     env.update(key, arg1, arg2)
 
@@ -160,7 +157,7 @@ class EVMJIT:
                                      gas,
                                      input,
                                      len(input),
-                                     to_uint256(value))
+                                     to_uint256be(value))
         return Result(ret, self.interface.release_result)
 
     def set_option(self, name, value):

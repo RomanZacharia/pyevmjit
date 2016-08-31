@@ -207,25 +207,21 @@ setup(
     author_email='roman.zacharia@gmail.com',
     license='MIT',
 
-    setup_requires=['cffi>=1.3.0', 'pytest-runner==2.6.2'],
+    setup_requires=['cffi>=1.3.0'],
     install_requires=['cffi>=1.3.0'],
-    tests_require=['pytest==2.8.7'],
 
-    packages=find_packages(exclude=('_cffi_build', '_cffi_build.*', 'libevmjit')),
-    ext_package="evmjit",
-    cffi_modules=[
-        "_cffi_build/build.py:ffi"
-    ],
+    packages=['evmjit'],
+    cffi_modules=['evmjit_build.py:ffibuilder'],
 
-    cmdclass={
-        'build_clib': build_clib,
-        'build_ext': build_ext,
-        'develop': develop,
-        'egg_info': egg_info,
-        'sdist': sdist,
-        'bdist_wheel': bdist_wheel
-    },
-    distclass=Distribution,
+    # cmdclass={
+    #     'build_clib': build_clib,
+    #     'build_ext': build_ext,
+    #     'develop': develop,
+    #     'egg_info': egg_info,
+    #     'sdist': sdist,
+    #     'bdist_wheel': bdist_wheel
+    # },
+    # distclass=Distribution,
     zip_safe=False,
 
     classifiers=[

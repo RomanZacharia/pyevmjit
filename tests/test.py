@@ -1,5 +1,5 @@
 import hashlib
-from evmjit import EVMJIT, Env, evm_mode, to_uint256
+from evmjit import EVMJIT, Env, evm_mode
 
 
 class TestEnv(Env):
@@ -14,14 +14,6 @@ class TestEnv(Env):
     def call(self, kind, gas, address, value, input, input_size, output,
              output_size):
         return False
-
-
-def test_to_uint256():
-    assert to_uint256(0)[0] == [0, 0, 0, 0]
-    assert to_uint256(1)[0] == [1, 0, 0, 0]
-    assert to_uint256(1 << 63)[0] == [1 << 63, 0, 0, 0]
-    assert to_uint256(1 << 64)[0] == [0, 1, 0, 0]
-    assert to_uint256(1 << 255)[0] == [0, 0, 0, 1 << 63]
 
 
 def test_evm():
@@ -58,5 +50,4 @@ def test_evm():
 
 
 if __name__ == "__main__":
-    test_to_uint256()
     test_evm()
