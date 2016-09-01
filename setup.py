@@ -1,3 +1,5 @@
+# coding=utf-8
+
 import errno
 import os
 import os.path
@@ -198,13 +200,13 @@ class develop(_develop):
 
 setup(
     name="evmjit",
-    version="0.1.1",
+    version="0.10.0-rc.1",
 
     description='FFI bindings to libevmjit',
     url='https://github.com/RomanZacharia/pyevmjit',
-    author='Roman Zacharia',
+    author=u'Roman Zacharia, Paweł Bylica',
     author_email='roman.zacharia@gmail.com',
-    license='MIT',
+    license='MIT',  # FIXME: Can we change to APACHE 2.0?
 
     setup_requires=['cffi>=1.3.0'],
     install_requires=['cffi>=1.3.0'],
