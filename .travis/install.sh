@@ -86,7 +86,7 @@ if [[ $BUNDLED -eq 0 ]]; then
 	  builtin pushd build
 	  cmake ..
 	  make evmjit-standalone
-	  make install
+	  sudo make install
 	  ls -l libevmjit
 #	  cp libevmjit/libevmjit-static.a ../../libevmjitst.a
 	  builtin popd
