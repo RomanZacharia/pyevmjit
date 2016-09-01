@@ -29,7 +29,6 @@ except ImportError:
 
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-from setup_support import absolute, build_flags, has_system_lib
 
 
 # Version of libevmjit to download if none exists in the `libevmjit`
