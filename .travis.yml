@@ -1,11 +1,9 @@
 sudo: required
 language: python
+dist: trusty
 
 python:
   - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
 
 env:
   global:
@@ -15,50 +13,52 @@ env:
     - INCLUDE_DIR=./libevmjit_ext/include:/opt/gcc-4.6.3/include/c++/4.6.3:/opt/gcc-4.6.3/include/c++/4.6.3/x86_64-unknown-linux-gnu
     - WHEELBUILDER_IMAGE=quay.io/pypa/manylinux1_x86_64
     - PYPI_USERNAME=insert_pypi_upload_username_here
-  matrix:
-    - BUNDLED=0
-    - BUNDLED=1
+  # matrix:
+  #   - BUNDLED=0
+  #   - BUNDLED=1
 
 cache:
+  ccache: true
   directories:
     - $HOME/.cache/pip
     - $HOME/.cache/python-dl
+    - build/evmjit/build
 
 # Sigh... Until Travis issue #2312 is fixed Travis' osx image doesn't properly
 # support Python so we need to manually specify this matrix...
-matrix:
-  include:
-    - os: osx
-      language: generic
-      osx_image: xcode7.1
-      python: 2.7
-      env:
-        - TRAVIS_PYTHON_VERSION=2.7
-        - BUNDLED=1
-    - os: osx
-      language: generic
-      osx_image: xcode7.1
-      python: 3.4
-      env:
-        - TRAVIS_PYTHON_VERSION=3.4
-        - BUNDLED=1
-    - os: osx
-      language: generic
-      osx_image: xcode7.1
-      python: 3.5
-      env:
-        - TRAVIS_PYTHON_VERSION=3.5
-        - BUNDLED=1
-    # Build `manylinux1` wheels
-    - os: linux
-      language: python
-      python: 3.5
-      sudo: required
-      services:
-        - docker
-      env:
-        - BUNDLED=1
-        - BUILD_LINUX_WHEELS=1
+# matrix:
+#   include:
+#     - os: osx
+#       language: generic
+#       osx_image: xcode7.1
+#       python: 2.7
+#       env:
+#         - TRAVIS_PYTHON_VERSION=2.7
+#         - BUNDLED=1
+#     - os: osx
+#       language: generic
+#       osx_image: xcode7.1
+#       python: 3.4
+#       env:
+#         - TRAVIS_PYTHON_VERSION=3.4
+#         - BUNDLED=1
+#     - os: osx
+#       language: generic
+#       osx_image: xcode7.1
+#       python: 3.5
+#       env:
+#         - TRAVIS_PYTHON_VERSION=3.5
+#         - BUNDLED=1
+#     # Build `manylinux1` wheels
+#     - os: linux
+#       language: python
+#       python: 3.5
+#       sudo: required
+#       services:
+#         - docker
+#       env:
+#         - BUNDLED=1
+#         - BUILD_LINUX_WHEELS=1
 
 addons:
   apt:
@@ -71,10 +71,11 @@ addons:
       - libgmp-dev
       - libatomic-ops-dev
 
-before_install:
-  - source .travis/install.sh
+# before_install:
+#   - source .travis/install.sh
 
 install:
+  - cmake --version
   - python setup.py install
 
 # This is a bit of a hack:
@@ -86,13 +87,15 @@ install:
 # into producing correct paths. For that to work we need to re-rename the
 # source back to it's correct name.
 script:
-  - mv evmjit _evmjit
-  - coverage run --parallel --include="*/site-packages/*.egg/evmjit/*" -m py.test
-  - mv _evmjit evmjit
-  - coverage combine
+  # - mv evmjit _evmjit
+  # - coverage run --parallel --include="*/site-packages/*.egg/evmjit/*" -m py.test
+  # - mv _evmjit evmjit
+  # - coverage combine
+  - cd tests
+  - python test.py
 
 after_success:
-  - coveralls
+  # - coveralls
 
 deploy:
   provider: script
