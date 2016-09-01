@@ -34,7 +34,7 @@ from setup_support import absolute, build_flags, has_system_lib
 
 # Version of libevmjit to download if none exists in the `libevmjit`
 # directory
-LIB_TARBALL_URL = "https://github.com/ethereum/evmjit/archive/develop.tar.gz"
+LIB_TARBALL_URL = "https://github.com/ethereum/evmjit/archive/v0.10.0-rc.1.tar.gz"
 
 
 # We require setuptools >= 3.3
