@@ -85,7 +85,7 @@ if [[ $BUNDLED -eq 0 ]]; then
 	  fi
 	  builtin pushd build
 	  cmake ..
-	  make
+	  make evmjit-standalone
 	  make install
 	  ls -l libevmjit
 #	  cp libevmjit/libevmjit-static.a ../../libevmjitst.a
