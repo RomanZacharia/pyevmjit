@@ -1,5 +1,5 @@
 import hashlib
-from evmjit import EVMJIT, Env, evm_mode
+from evmjit import EVMJIT, Env
 
 
 class TestEnv(Env):
@@ -32,16 +32,16 @@ def test_evm():
     success = jit.set_option("hello", "world")
     assert not success
 
-    ready = jit.is_code_ready(evm_mode.EVM_HOMESTEAD, code_hash)
+    ready = jit.is_code_ready(EVMJIT.HOMESTEAD, code_hash)
     assert not ready
 
-    jit.prepare_code(evm_mode.EVM_HOMESTEAD, code_hash, code)
+    jit.prepare_code(EVMJIT.HOMESTEAD, code_hash, code)
 
-    ready = jit.is_code_ready(evm_mode.EVM_HOMESTEAD, code_hash)
+    ready = jit.is_code_ready(EVMJIT.HOMESTEAD, code_hash)
     assert ready
 
     env = TestEnv()
-    result = jit.execute(env, evm_mode.EVM_HOMESTEAD, code_hash, code, gas,
+    result = jit.execute(env, EVMJIT.HOMESTEAD, code_hash, code, gas,
                          input, value)
 
     assert result.code == 0  # Success.

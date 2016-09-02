@@ -1,28 +1,6 @@
 from _evmjit import ffi, lib
 
 
-def enum(**enums):
-    return type('Enum', (), enums)
-
-evm_mode = enum(EVM_FRONTIER=0, EVM_HOMESTEAD=1)
-
-evm_query_key = enum(
-    EVM_SLOAD = 0,            #< Storage value of a given key for SLOAD.
-    EVM_ADDRESS = 1,          #< Address of the contract for ADDRESS.
-    EVM_CALLER = 2,           #< Message sender address for CALLER.
-    EVM_ORIGIN = 3,           #< Transaction origin address for ORIGIN.
-    EVM_GAS_PRICE = 4,        #< Transaction gas price for GASPRICE.
-    EVM_COINBASE = 5,         #< Current block miner address for COINBASE.
-    EVM_DIFFICULTY = 6,       #< Current block difficulty for DIFFICULTY.
-    EVM_GAS_LIMIT = 7,        #< Current block gas limit for GASLIMIT.
-    EVM_NUMBER = 8,           #< Current block number for NUMBER.
-    EVM_TIMESTAMP = 9,        #< Current block timestamp for TIMESTAMP.
-    EVM_CODE_BY_ADDRESS = 10, #< Code by an address for EXTCODE/SIZE.
-    EVM_BALANCE = 11,         #< Balance of a given address for BALANCE.
-    EVM_BLOCKHASH = 12        #< Block hash of by block number for BLOCKHASH.
-)
-
-
 def from_uint256be(uint256be):
     """ Converts EVM-C uint256be to integer."""
     if hasattr(int, 'from_bytes'):  # Python 3
@@ -45,7 +23,7 @@ def to_uint256be(x):
 
 @ffi.def_extern()
 def evm_query(env, key, arg):
-    if key == evm_query_key.EVM_SLOAD:
+    if key == EVMJIT.SLOAD:
         arg = from_uint256be(arg.uint256be)
     else:
         arg = None
@@ -54,26 +32,26 @@ def evm_query(env, key, arg):
     res = env.query(key, arg)
 
     # Convert answer back to EVM-C.
-    if key in (evm_query_key.EVM_GAS_PRICE,
-               evm_query_key.EVM_DIFFICULTY,
-               evm_query_key.EVM_BALANCE,
-               evm_query_key.EVM_BLOCKHASH,
-               evm_query_key.EVM_SLOAD):
+    if key in (EVMJIT.GAS_PRICE,
+               EVMJIT.DIFFICULTY,
+               EVMJIT.BALANCE,
+               EVMJIT.BLOCKHASH,
+               EVMJIT.SLOAD):
         return {'uint256be': to_uint256be(res)}
 
-    if key in (evm_query_key.EVM_ADDRESS,
-               evm_query_key.EVM_CALLER,
-               evm_query_key.EVM_ORIGIN,
-               evm_query_key.EVM_COINBASE):
+    if key in (EVMJIT.ADDRESS,
+               EVMJIT.CALLER,
+               EVMJIT.ORIGIN,
+               EVMJIT.COINBASE):
         assert len(res) == 20
         return {'address': res}
 
-    if key in (evm_query_key.EVM_GAS_LIMIT,
-               evm_query_key.EVM_NUMBER,
-               evm_query_key.EVM_TIMESTAMP):
+    if key in (EVMJIT.GAS_LIMIT,
+               EVMJIT.NUMBER,
+               EVMJIT.TIMESTAMP):
         return {'int64': res}
 
-    if key == evm_query_key.EVM_CODE_BY_ADDRESS:
+    if key == EVMJIT.CODE_BY_ADDRESS:
         return {'data': res, 'data_size': len(res)}
 
 
@@ -82,7 +60,7 @@ def evm_update(env, key, arg1, arg2):
     env = ffi.from_handle(ffi.cast('void*', env))
 
     # Preprocess arguments.
-    if key == lib.EVM_SSTORE:
+    if key == EVMJIT.SSTORE:
         arg1 = from_uint256be(arg1.uint256be)
         arg2 = from_uint256be(arg2.uint256be)
 
@@ -133,6 +111,32 @@ class Result(object):
 
 
 class EVMJIT:
+    # Execution compatibility mode
+    FRONTIER = lib.EVM_FRONTIER
+    HOMESTEAD = lib.EVM_HOMESTEAD
+
+    # Query keys
+    SLOAD = lib.EVM_SLOAD
+    ADDRESS = lib.EVM_ADDRESS
+    CALLER = lib.EVM_CALLER
+    ORIGIN = lib.EVM_ORIGIN
+    GAS_PRICE = lib.EVM_GAS_PRICE
+    COINBASE = lib.EVM_COINBASE
+    DIFFICULTY = lib.EVM_DIFFICULTY
+    GAS_LIMIT = lib.EVM_GAS_LIMIT
+    NUMBER = lib.EVM_NUMBER
+    TIMESTAMP = lib.EVM_TIMESTAMP
+    CODE_BY_ADDRESS = lib.EVM_CODE_BY_ADDRESS
+    BALANCE = lib.EVM_BALANCE
+    BLOCKHASH = lib.EVM_BLOCKHASH
+
+    # Update keys
+    SSTORE = lib.EVM_SSTORE
+    LOG = lib.EVM_LOG
+    SELFDESTRUCT = lib.EVM_SELFDESTRUCT
+    # TODO: The above constants comes from EVM-C and are not EVMJIT specific.
+    #       Should we move them to EVM namespace?
+
     def __init__(self):
         # Get virtual interface from EVMJIT module.
         self.interface = lib.evmjit_get_interface()
