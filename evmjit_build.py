@@ -32,7 +32,7 @@ extern "Python" int64_t evm_call(struct evm_env* env,
 struct evm_interface evmjit_get_interface(void);
 """
 
-EVMJIT_URL = 'https://github.com/ethereum/evmjit/archive/develop.tar.gz'
+EVMJIT_URL = 'https://github.com/ethereum/evmjit/archive/python.tar.gz'
 BUILD_DIR = path.join(path.abspath(path.dirname(__file__)), 'build')
 EVMJIT_SRC_DIR = path.join(BUILD_DIR, 'evmjit', 'src')
 EVMJIT_BUILD_DIR = path.join(BUILD_DIR, 'evmjit', 'build')

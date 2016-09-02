@@ -70,8 +70,15 @@ def evm_update(env, key, arg1, arg2):
 @ffi.def_extern()
 def evm_call(env, kind, gas, address, value, input, input_size, output,
              output_size):
+    assert gas >= 0 and gas <= 2**64 - 1
     env = ffi.from_handle(ffi.cast('void*', env))
-    return env.call(kind)  # FIXME
+    value = from_uint256be(value)
+    input = ffi.unpack(input, input_size)
+    result_code, output, gas_left = env.call(kind, gas, address, value, input)
+    assert gas_left <= gas
+    if result_code != EVMJIT.SUCCESS:
+        gas_left |= EVMJIT.CALL_FAILURE
+    return gas_left
 
 
 class Env(object):
@@ -134,6 +141,19 @@ class EVMJIT:
     SSTORE = lib.EVM_SSTORE
     LOG = lib.EVM_LOG
     SELFDESTRUCT = lib.EVM_SELFDESTRUCT
+
+    # Result codes
+    SUCCESS = lib.EVM_SUCCESS
+
+    # Call kinds
+    CALL = lib.EVM_CALL
+    CALLCODE = lib.EVM_CALLCODE
+    DELEGATECALL = lib.EVM_DELEGATECALL
+    CREATE = lib.EVM_CREATE
+
+    # Call exception flag.
+    CALL_FAILURE = lib.EVM_CALL_FAILURE
+
     # TODO: The above constants comes from EVM-C and are not EVMJIT specific.
     #       Should we move them to EVM namespace?
 
