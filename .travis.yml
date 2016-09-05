@@ -64,18 +64,14 @@ addons:
   apt:
     packages:
       - git
-      - libtool
       - cmake
-      - pkg-config
-      - libffi-dev
-      - libgmp-dev
-      - libatomic-ops-dev
 
-# before_install:
-#   - source .travis/install.sh
+before_install:
+  - git clone --depth 1 https://github.com/ethereum/tests ~/ethereum-tests
+  - export ETHEREUM_TEST_PATH=~/ethereum-tests
+  - pip install pytest sha3
 
 install:
-  - cmake --version
   - python setup.py install
 
 # This is a bit of a hack:
@@ -91,8 +87,7 @@ script:
   # - coverage run --parallel --include="*/site-packages/*.egg/evmjit/*" -m py.test
   # - mv _evmjit evmjit
   # - coverage combine
-  - cd tests
-  - python test.py
+  - py.test
 
 after_success:
   # - coveralls
