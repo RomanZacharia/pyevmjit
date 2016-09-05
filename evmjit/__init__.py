@@ -5,7 +5,11 @@ def from_uint256be(uint256be):
     """ Converts EVM-C uint256be to integer."""
     if hasattr(int, 'from_bytes'):  # Python 3
         return int.from_bytes(uint256be.bytes, byteorder='big')
-    return int(bytes(uint256be.bytes).encode('hex'), 16)
+    n = 0
+    for i, b in enumerate(uint256be.bytes):
+        a = b << (31 - i) * 8
+        n = n | a
+    return n
 
 
 def to_uint256be(x):
@@ -44,7 +48,7 @@ def evm_query(env, key, arg):
                EVMJIT.ORIGIN,
                EVMJIT.COINBASE):
         assert len(res) == 20
-        return {'address': res}
+        return {'address': (res,)}
 
     if key in (EVMJIT.GAS_LIMIT,
                EVMJIT.NUMBER,
@@ -72,13 +76,13 @@ def evm_call(env, kind, gas, address, value, input, input_size, output,
              output_size):
     assert gas >= 0 and gas <= 2**64 - 1
     env = ffi.from_handle(ffi.cast('void*', env))
+    address = ffi.buffer(address.bytes)
     value = from_uint256be(value)
-    input = ffi.unpack(input, input_size)
-    result_code, output, gas_left = env.call(kind, gas, address, value, input)
-    assert gas_left <= gas
+    input = ffi.buffer(input, input_size)
+    result_code, output, gas_used = env.call(kind, gas, address, value, input)
     if result_code != EVMJIT.SUCCESS:
-        gas_left |= EVMJIT.CALL_FAILURE
-    return gas_left
+        gas_used |= lib.EVM_CALL_FAILURE
+    return gas_used
 
 
 class Env(object):
@@ -114,7 +118,7 @@ class Result(object):
         output_size = self.__res.output_size
         if output_size == 0:
             return b''
-        return ffi.unpack(self.__res.output_data, self.__res.output_size)
+        return ffi.buffer(self.__res.output_data, self.__res.output_size)
 
 
 class EVMJIT:
@@ -144,15 +148,13 @@ class EVMJIT:
 
     # Result codes
     SUCCESS = lib.EVM_SUCCESS
+    FAILURE = lib.EVM_FAILURE
 
     # Call kinds
     CALL = lib.EVM_CALL
     CALLCODE = lib.EVM_CALLCODE
     DELEGATECALL = lib.EVM_DELEGATECALL
     CREATE = lib.EVM_CREATE
-
-    # Call exception flag.
-    CALL_FAILURE = lib.EVM_CALL_FAILURE
 
     # TODO: The above constants comes from EVM-C and are not EVMJIT specific.
     #       Should we move them to EVM namespace?
