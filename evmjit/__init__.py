@@ -29,6 +29,10 @@ def to_uint256be(x):
 def evm_query(env, key, arg):
     if key == EVMJIT.SLOAD:
         arg = from_uint256be(arg.uint256be)
+    elif key in (EVMJIT.BALANCE, EVMJIT.CODE_BY_ADDRESS):
+        arg = ffi.buffer(arg.address.bytes)
+    elif key == EVMJIT.BLOCKHASH:
+        arg = arg.int64
     else:
         arg = None
 
@@ -39,8 +43,8 @@ def evm_query(env, key, arg):
     if key in (EVMJIT.GAS_PRICE,
                EVMJIT.DIFFICULTY,
                EVMJIT.BALANCE,
-               EVMJIT.BLOCKHASH,
                EVMJIT.SLOAD):
+        print(key, type(res))
         return {'uint256be': to_uint256be(res)}
 
     if key in (EVMJIT.ADDRESS,
@@ -55,8 +59,11 @@ def evm_query(env, key, arg):
                EVMJIT.TIMESTAMP):
         return {'int64': res}
 
+    if key == EVMJIT.BLOCKHASH:
+        return {'uint256be': (res,)}
+
     if key == EVMJIT.CODE_BY_ADDRESS:
-        return {'data': res, 'data_size': len(res)}
+        return {'data': ffi.from_buffer(res), 'data_size': len(res)}
 
 
 @ffi.def_extern()
@@ -67,6 +74,9 @@ def evm_update(env, key, arg1, arg2):
     if key == EVMJIT.SSTORE:
         arg1 = from_uint256be(arg1.uint256be)
         arg2 = from_uint256be(arg2.uint256be)
+    elif key == EVMJIT.SELFDESTRUCT:
+        arg1 = ffi.buffer(arg1.address.bytes)
+        arg2 = None
 
     env.update(key, arg1, arg2)
 
@@ -79,9 +89,12 @@ def evm_call(env, kind, gas, address, value, input, input_size, output,
     address = ffi.buffer(address.bytes)
     value = from_uint256be(value)
     input = ffi.buffer(input, input_size)
-    result_code, output, gas_used = env.call(kind, gas, address, value, input)
+    result_code, out, gas_used = env.call(kind, gas, address, value, input)
     if result_code != EVMJIT.SUCCESS:
         gas_used |= lib.EVM_CALL_FAILURE
+    if out:
+        size = min(output_size, len(out))
+        ffi.memmove(output, out, size)
     return gas_used
 
 
@@ -115,10 +128,8 @@ class Result(object):
 
     @property
     def output(self):
-        output_size = self.__res.output_size
-        if output_size == 0:
-            return b''
-        return ffi.buffer(self.__res.output_data, self.__res.output_size)
+        """ Returns a copy of the output."""
+        return ffi.buffer(self.__res.output_data, self.__res.output_size)[:]
 
 
 class EVMJIT:

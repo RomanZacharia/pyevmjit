@@ -208,8 +208,8 @@ setup(
     author_email='roman.zacharia@gmail.com',
     license='MIT',  # FIXME: Can we change to APACHE 2.0?
 
-    setup_requires=['cffi>=1.3.0'],
-    install_requires=['cffi>=1.3.0'],
+    setup_requires=['cffi>=1.8.2'],
+    install_requires=['cffi>=1.8.2'],
 
     packages=['evmjit'],
     cffi_modules=['evmjit_build.py:ffibuilder'],

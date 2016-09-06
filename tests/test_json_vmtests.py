@@ -18,7 +18,6 @@ def code_hash(code):
 class Env(object):
     def __init__(self, desc):
         self.desc = desc
-        self.pre = desc['pre']
         self.addr = desc['exec']['address'].decode('hex')
         self.caller = desc['exec']['caller'].decode('hex')
         self.tx_origin = desc['exec']['origin'].decode('hex')
@@ -27,7 +26,7 @@ class Env(object):
         self.block_gas_limit = int(desc['env']['currentGasLimit'], 16)
         self.block_difficulty = int(desc['env']['currentDifficulty'], 16)
         self.block_coinbase = desc['env']['currentCoinbase'].decode('hex')
-        self.out_storage = {}
+        self.storage = desc['pre'][hexlify(self.addr)]['storage']
 
     def get_balance(self, addr):
         addr = addr.encode('hex')
@@ -57,10 +56,15 @@ class Env(object):
             return self.block_gas_limit
         if key == EVMJIT.DIFFICULTY:
             return self.block_difficulty
+        if key == EVMJIT.BLOCKHASH:
+            return b'\x01' * 32
 
     def update(self, key, arg1, arg2):
         print("update(key: {}, arg1: {}, arg2: {})".format(key, arg1, arg2))
-        self.out_storage[arg1] = arg2
+        if key == EVMJIT.SSTORE:
+            key = '0x{:02x}'.format(arg1)
+            val = '0x{:02x}'.format(arg2)
+            self.storage[key] = val
 
     def call(self, kind, gas, address, value, input):
         if kind != EVMJIT.DELEGATECALL:
@@ -94,25 +98,29 @@ def test_vmtests():
     for subdir, _, files in os.walk(vmtests_dir):
         json_test_files += [path.join(subdir, f)
                             for f in files if f.endswith('.json')]
-    # print(json_test_files)
-    test_suite = json.load(open(json_test_files[0]))
-    for name, desc in test_suite.iteritems():
-        print(name)
-        # pprint(desc)
-        ex = desc['exec']
-        code = ex['code'][2:].decode('hex')
-        data = ex['data'][2:].decode('hex')
-        gas = int(ex['gas'], 16)
-        value = int(ex['value'], 16)
-        res = jit.execute(Env(desc), EVMJIT.FRONTIER, code_hash(code), code,
-                          gas, data, value)
-        if 'gas' in desc:
-            assert res.code == EVMJIT.SUCCESS
-            expected_gas = int(desc['gas'], 16)
-            assert res.gas_left == expected_gas
-        else:
-            assert res.code != EVMJIT.SUCCESS
-
+    for json_test_file in json_test_files:
+        print(json_test_file)
+        test_suite = json.load(open(json_test_file))
+        for name, desc in test_suite.iteritems():
+            print(name)
+            assert name != 'pc1'
+            # pprint(desc)
+            ex = desc['exec']
+            code = ex['code'][2:].decode('hex')
+            data = ex['data'][2:].decode('hex')
+            gas = int(ex['gas'], 16)
+            value = int(ex['value'], 16)
+            env = Env(desc)
+            res = jit.execute(env, EVMJIT.FRONTIER, code_hash(code),
+                              code, gas, data, value)
+            if 'gas' in desc:
+                assert res.code == EVMJIT.SUCCESS
+                assert env.storage == desc['post'][hexlify(env.addr)]['storage']
+                expected_gas = int(desc['gas'], 16)
+                assert res.gas_left == expected_gas
+            else:
+                assert res.code != EVMJIT.SUCCESS
+    assert False
 
 if __name__ == '__main__':
     test_vmtests()
