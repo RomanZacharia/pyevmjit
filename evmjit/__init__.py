@@ -74,6 +74,10 @@ def evm_update(env, key, arg1, arg2):
     if key == EVMJIT.SSTORE:
         arg1 = from_uint256be(arg1.uint256be)
         arg2 = from_uint256be(arg2.uint256be)
+    elif key == EVMJIT.LOG:
+        arg1 = ffi.buffer(arg1.data, arg1.data_size)
+        n_topics = arg2.data_size // 32
+        arg2 = [ffi.buffer(arg2.data + (i * 32), 32) for i in range(n_topics)]
     elif key == EVMJIT.SELFDESTRUCT:
         arg1 = ffi.buffer(arg1.address.bytes)
         arg2 = None
