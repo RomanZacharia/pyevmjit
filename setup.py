@@ -200,7 +200,7 @@ class develop(_develop):
 
 setup(
     name="evmjit",
-    version="0.10.0-rc.1",
+    version="0.10.0b1",
 
     description='FFI bindings to libevmjit',
     url='https://github.com/RomanZacharia/pyevmjit',
