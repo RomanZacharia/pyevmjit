@@ -91,7 +91,7 @@ def evm_call(env, kind, gas, address, value, input, input_size, output,
     assert gas >= 0 and gas <= 2**64 - 1
     env = ffi.from_handle(ffi.cast('void*', env))
     address = ffi.buffer(address.bytes)
-    value = from_uint256be(value)
+    value = from_uint256be(value) if kind != EVMJIT.DELEGATECALL else 0
     input = ffi.buffer(input, input_size)
     result_code, out, gas_used = env.call(kind, gas, address, value, input)
     if result_code != EVMJIT.SUCCESS:
