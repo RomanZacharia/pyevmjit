@@ -32,7 +32,9 @@ def evm_query(env, key, arg):
     elif key in (EVMJIT.BALANCE, EVMJIT.CODE_BY_ADDRESS):
         arg = ffi.buffer(arg.address.bytes)
     elif key == EVMJIT.BLOCKHASH:
-        arg = arg.int64
+        # FIXME: EVMJIT has a bug here. It passes int64 but does not check
+        #        if the number is not greater.
+        arg = int(ffi.cast("uint64_t", arg.int64))
     else:
         arg = None
 
