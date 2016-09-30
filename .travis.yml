@@ -92,8 +92,8 @@ install:
 # source back to it's correct name.
 script:
    - echo "Script section executed"
-#   - pip freeze | grep evmjit
-#   - python tests/test.py
+   - pip freeze | grep evmjit
+   - python tests/test.py
 #   - ls -l /home/travis/virtualenv/python2.7.10/lib/python2.7/site-packages/evmjit-0.1.1-py2.7-linux-x86_64.egg/evmjit
 #   - ls -l /home/travis/virtualenv/python2.7.10/lib/python2.7/site-packages
 #   - which python
